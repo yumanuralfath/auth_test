@@ -1,0 +1,1018 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yumana — Auth</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0a0a0f;
+        --surface: #12121a;
+        --surface2: #1a1a26;
+        --border: rgba(255, 255, 255, 0.07);
+        --accent: #c8a96e;
+        --accent2: #8eb8c8;
+        --text: #e8e4dc;
+        --muted: rgba(232, 228, 220, 0.45);
+        --error: #e07070;
+        --success: #70c090;
+        --radius: 2px;
+      }
+
+      body {
+        font-family: "DM Mono", monospace;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow-x: hidden;
+      }
+
+      /* Ambient background */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(
+            ellipse 60% 50% at 20% 30%,
+            rgba(200, 169, 110, 0.06) 0%,
+            transparent 70%
+          ),
+          radial-gradient(
+            ellipse 50% 60% at 80% 70%,
+            rgba(142, 184, 200, 0.05) 0%,
+            transparent 70%
+          );
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* Grid lines */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+          linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.015) 1px,
+            transparent 1px
+          );
+        background-size: 60px 60px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .container {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 420px;
+        padding: 20px;
+      }
+
+      /* Logo */
+      .logo {
+        text-align: center;
+        margin-bottom: 36px;
+      }
+      .logo-mark {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 42px;
+        font-weight: 300;
+        letter-spacing: 0.15em;
+        color: var(--text);
+        line-height: 1;
+      }
+      .logo-mark span {
+        color: var(--accent);
+      }
+      .logo-sub {
+        font-size: 9px;
+        letter-spacing: 0.4em;
+        color: var(--muted);
+        text-transform: uppercase;
+        margin-top: 6px;
+      }
+
+      /* Card */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        padding: 40px 36px;
+        position: relative;
+        overflow: hidden;
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent),
+          transparent
+        );
+        opacity: 0.5;
+      }
+
+      /* Tabs */
+      .tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 32px;
+        border-bottom: 1px solid var(--border);
+      }
+      .tab {
+        flex: 1;
+        padding: 10px;
+        text-align: center;
+        font-size: 10px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        cursor: pointer;
+        color: var(--muted);
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        transition: all 0.2s;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        font-family: "DM Mono", monospace;
+      }
+      .tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
+      .tab:hover:not(.active) {
+        color: var(--text);
+      }
+
+      /* Views */
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Form */
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        font-size: 9px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      input {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-family: "DM Mono", monospace;
+        font-size: 13px;
+        padding: 11px 14px;
+        outline: none;
+        transition: border-color 0.2s;
+        border-radius: var(--radius);
+      }
+      input:focus {
+        border-color: rgba(200, 169, 110, 0.4);
+      }
+      input::placeholder {
+        color: rgba(232, 228, 220, 0.2);
+        font-size: 12px;
+      }
+
+      /* Button */
+      .btn {
+        width: 100%;
+        padding: 13px;
+        background: var(--accent);
+        color: var(--bg);
+        border: none;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 8px;
+        border-radius: var(--radius);
+        position: relative;
+        overflow: hidden;
+      }
+      .btn:hover {
+        background: #d4b97e;
+        transform: translateY(-1px);
+      }
+      .btn:active {
+        transform: translateY(0);
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--border);
+      }
+      .btn-ghost:hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+
+      /* Loading spinner inside button */
+      .btn .spinner {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border: 2px solid rgba(10, 10, 15, 0.3);
+        border-top-color: var(--bg);
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Link */
+      .link {
+        color: var(--accent);
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 11px;
+        transition: opacity 0.2s;
+      }
+      .link:hover {
+        opacity: 0.7;
+      }
+
+      .text-center {
+        text-align: center;
+      }
+      .mt-16 {
+        margin-top: 16px;
+      }
+      .mt-8 {
+        margin-top: 8px;
+      }
+      .text-sm {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      /* Alert */
+      .alert {
+        padding: 10px 14px;
+        font-size: 11px;
+        margin-bottom: 20px;
+        border-radius: var(--radius);
+        display: none;
+        line-height: 1.5;
+      }
+      .alert.show {
+        display: block;
+      }
+      .alert-error {
+        background: rgba(224, 112, 112, 0.1);
+        border: 1px solid rgba(224, 112, 112, 0.3);
+        color: var(--error);
+      }
+      .alert-success {
+        background: rgba(112, 192, 144, 0.1);
+        border: 1px solid rgba(112, 192, 144, 0.3);
+        color: var(--success);
+      }
+
+      /* Divider */
+      .divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 20px 0;
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 0.2em;
+      }
+      .divider::before,
+      .divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+
+      /* ─── Profile View ─── */
+      #view-profile {
+        animation: fadeIn 0.4s ease;
+      }
+
+      .profile-header {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+
+      .avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Cormorant Garamond", serif;
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--bg);
+        margin: 0 auto 16px;
+        border: 2px solid rgba(200, 169, 110, 0.3);
+        position: relative;
+      }
+      .avatar::after {
+        content: "";
+        position: absolute;
+        inset: -4px;
+        border-radius: 50%;
+        border: 1px solid rgba(200, 169, 110, 0.15);
+      }
+
+      .profile-name {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 26px;
+        font-weight: 300;
+        letter-spacing: 0.05em;
+      }
+
+      .profile-role {
+        display: inline-block;
+        font-size: 9px;
+        letter-spacing: 0.35em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-top: 6px;
+        padding: 3px 10px;
+        border: 1px solid rgba(200, 169, 110, 0.3);
+        border-radius: 20px;
+      }
+
+      .profile-grid {
+        display: grid;
+        gap: 1px;
+        background: var(--border);
+        border: 1px solid var(--border);
+        margin-bottom: 24px;
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+
+      .profile-field {
+        background: var(--surface2);
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .field-label {
+        font-size: 9px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: var(--muted);
+        flex-shrink: 0;
+      }
+
+      .field-value {
+        font-size: 12px;
+        color: var(--text);
+        text-align: right;
+        word-break: break-all;
+      }
+
+      .badge {
+        display: inline-block;
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 20px;
+      }
+      .badge-verified {
+        background: rgba(112, 192, 144, 0.15);
+        color: var(--success);
+        border: 1px solid rgba(112, 192, 144, 0.3);
+      }
+      .badge-unverified {
+        background: rgba(224, 112, 112, 0.15);
+        color: var(--error);
+        border: 1px solid rgba(224, 112, 112, 0.3);
+      }
+
+      /* Status indicator */
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--success);
+        display: inline-block;
+        margin-right: 6px;
+        box-shadow: 0 0 6px var(--success);
+        animation: pulse 2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      .footer-note {
+        text-align: center;
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 8px;
+        letter-spacing: 0.1em;
+      }
+
+      /* Forgot password back link */
+      .back-link {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        color: var(--muted);
+        cursor: pointer;
+        margin-bottom: 24px;
+        width: fit-content;
+        transition: color 0.2s;
+      }
+      .back-link:hover {
+        color: var(--text);
+      }
+      .back-link svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      .view-title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 22px;
+        font-weight: 300;
+        margin-bottom: 6px;
+      }
+      .view-desc {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 28px;
+        line-height: 1.6;
+      }
+
+      /* Skeleton loader */
+      .skeleton {
+        background: linear-gradient(
+          90deg,
+          var(--surface2) 25%,
+          var(--surface) 50%,
+          var(--surface2) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 2px;
+        height: 14px;
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+
+      .loading-profile {
+        display: none;
+      }
+      .loading-profile.show {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo">
+        <div class="logo-mark">Y<span>u</span>mana</div>
+        <div class="logo-sub">Authentication Portal</div>
+      </div>
+
+      <!-- ─── Auth Card ─── -->
+      <div class="card" id="auth-card">
+        <div class="tabs" id="auth-tabs">
+          <button class="tab active" onclick="switchTab('login')">Masuk</button>
+          <button class="tab" onclick="switchTab('register')">Daftar</button>
+        </div>
+
+        <!-- LOGIN -->
+        <div class="view active" id="view-login">
+          <div class="alert alert-error" id="login-alert"></div>
+          <div class="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              id="login-email"
+              placeholder="nama@email.com"
+              autocomplete="email"
+            />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              id="login-password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+            />
+          </div>
+          <div class="text-center mt-8">
+            <span class="link" onclick="switchView('forgot')"
+              >Lupa password?</span
+            >
+          </div>
+          <button class="btn" id="login-btn" onclick="doLogin()">Masuk</button>
+          <div class="text-center mt-16 text-sm">
+            Belum punya akun?
+            <span class="link" onclick="switchTab('register')"
+              >Daftar sekarang</span
+            >
+          </div>
+        </div>
+
+        <!-- REGISTER -->
+        <div class="view" id="view-register">
+          <div class="alert alert-error" id="register-alert"></div>
+          <div class="alert alert-success" id="register-success"></div>
+          <div class="form-group">
+            <label>Username</label>
+            <input
+              type="text"
+              id="reg-username"
+              placeholder="username_kamu"
+              autocomplete="username"
+            />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              id="reg-email"
+              placeholder="nama@email.com"
+              autocomplete="email"
+            />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              id="reg-password"
+              placeholder="Min. 8 karakter"
+              autocomplete="new-password"
+            />
+          </div>
+          <button class="btn" id="register-btn" onclick="doRegister()">
+            Buat Akun
+          </button>
+          <div class="text-center mt-16 text-sm">
+            Sudah punya akun?
+            <span class="link" onclick="switchTab('login')">Masuk</span>
+          </div>
+        </div>
+
+        <!-- FORGOT PASSWORD -->
+        <div class="view" id="view-forgot">
+          <div class="back-link" onclick="switchView('login')">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M19 12H5M12 5l-7 7 7 7" />
+            </svg>
+            Kembali ke login
+          </div>
+          <div class="view-title">Reset Password</div>
+          <div class="view-desc">
+            Masukkan email akun kamu. Kami akan kirimkan link untuk reset
+            password.
+          </div>
+          <div class="alert alert-error" id="forgot-alert"></div>
+          <div class="alert alert-success" id="forgot-success"></div>
+          <div class="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              id="forgot-email"
+              placeholder="nama@email.com"
+            />
+          </div>
+          <button class="btn" id="forgot-btn" onclick="doForgotPassword()">
+            Kirim Link Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- ─── Profile Card ─── -->
+      <div class="card" id="profile-card" style="display: none">
+        <div class="loading-profile" id="profile-loading">
+          <div style="text-align: center; padding: 20px 0">
+            <div
+              class="skeleton"
+              style="
+                width: 72px;
+                height: 72px;
+                border-radius: 50%;
+                margin: 0 auto 16px;
+              "
+            ></div>
+            <div
+              class="skeleton"
+              style="width: 140px; height: 22px; margin: 0 auto 10px"
+            ></div>
+            <div
+              class="skeleton"
+              style="width: 80px; height: 16px; margin: 0 auto"
+            ></div>
+          </div>
+        </div>
+
+        <div id="profile-content" style="display: none">
+          <div class="profile-header">
+            <div class="avatar" id="profile-avatar">?</div>
+            <div class="profile-name" id="profile-name">—</div>
+            <div class="profile-role" id="profile-role">Member</div>
+          </div>
+
+          <div class="profile-grid">
+            <div class="profile-field">
+              <span class="field-label">Status</span>
+              <span class="field-value"
+                ><span class="status-dot"></span>Online</span
+              >
+            </div>
+            <div class="profile-field">
+              <span class="field-label">Email</span>
+              <span class="field-value" id="profile-email">—</span>
+            </div>
+            <div class="profile-field">
+              <span class="field-label">Email</span>
+              <span class="field-value" id="profile-verified">—</span>
+            </div>
+            <div class="profile-field">
+              <span class="field-label">Bergabung</span>
+              <span class="field-value" id="profile-created">—</span>
+            </div>
+            <div class="profile-field">
+              <span class="field-label">Terakhir login</span>
+              <span class="field-value" id="profile-last-login">—</span>
+            </div>
+            <div class="profile-field">
+              <span class="field-label">User ID</span>
+              <span
+                class="field-value"
+                id="profile-id"
+                style="font-size: 10px; opacity: 0.6"
+                >—</span
+              >
+            </div>
+          </div>
+
+          <button class="btn btn-ghost" onclick="doLogout()">
+            Keluar dari Akun
+          </button>
+          <div class="footer-note mt-8">
+            Sesi akan berakhir otomatis saat browser ditutup
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API = "https://apiv2.yumana.my.id/api";
+      let currentTab = "login";
+
+      // ─── Storage helpers ───
+      function saveTokens(access, refresh) {
+        sessionStorage.setItem("yumana_access", access);
+        sessionStorage.setItem("yumana_refresh", refresh);
+      }
+      function getAccess() {
+        return sessionStorage.getItem("yumana_access");
+      }
+      function getRefresh() {
+        return sessionStorage.getItem("yumana_refresh");
+      }
+      function clearTokens() {
+        sessionStorage.removeItem("yumana_access");
+        sessionStorage.removeItem("yumana_refresh");
+      }
+
+      // ─── UI helpers ───
+      function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll(".tab").forEach((t, i) => {
+          t.classList.toggle(
+            "active",
+            (i === 0 && tab === "login") || (i === 1 && tab === "register"),
+          );
+        });
+        switchView(tab);
+      }
+
+      function switchView(view) {
+        document
+          .querySelectorAll(".view")
+          .forEach((v) => v.classList.remove("active"));
+        const el = document.getElementById("view-" + view);
+        if (el) el.classList.add("active");
+      }
+
+      function showAlert(id, msg, type = "error") {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.className = `alert alert-${type} show`;
+      }
+      function hideAlert(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove("show");
+      }
+
+      function setLoading(btnId, loading, text = "") {
+        const btn = document.getElementById(btnId);
+        if (loading) {
+          btn.disabled = true;
+          btn.innerHTML = `<span class="spinner"></span>${text || btn.textContent}`;
+        } else {
+          btn.disabled = false;
+          btn.innerHTML = text;
+        }
+      }
+
+      async function apiRequest(path, options = {}) {
+        const headers = {
+          "Content-Type": "application/json",
+          ...options.headers,
+        };
+        const token = getAccess();
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const res = await fetch(API + path, { ...options, headers });
+        const data = await res.json().catch(() => ({}));
+        return { ok: res.ok, status: res.status, data };
+      }
+
+      // ─── Auth functions ───
+      async function doLogin() {
+        hideAlert("login-alert");
+        const email = document.getElementById("login-email").value.trim();
+        const password = document.getElementById("login-password").value;
+
+        if (!email || !password)
+          return showAlert("login-alert", "Email dan password wajib diisi.");
+
+        setLoading("login-btn", true, "Memproses...");
+        const { ok, data } = await apiRequest("/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ email, password }),
+        });
+        setLoading("login-btn", false, "Masuk");
+
+        if (!ok)
+          return showAlert(
+            "login-alert",
+            data.message ||
+              data.error ||
+              "Login gagal. Periksa kembali email dan password.",
+          );
+
+        saveTokens(data.access_token || data.token, data.refresh_token);
+        showProfile();
+      }
+
+      async function doRegister() {
+        hideAlert("register-alert");
+        hideAlert("register-success");
+        const username = document.getElementById("reg-username").value.trim();
+        const email = document.getElementById("reg-email").value.trim();
+        const password = document.getElementById("reg-password").value;
+
+        if (!username || !email || !password)
+          return showAlert("register-alert", "Semua kolom wajib diisi.");
+        if (password.length < 8)
+          return showAlert("register-alert", "Password minimal 8 karakter.");
+
+        setLoading("register-btn", true, "Mendaftar...");
+        const { ok, data } = await apiRequest("/auth/register", {
+          method: "POST",
+          body: JSON.stringify({ username, email, password }),
+        });
+        setLoading("register-btn", false, "Buat Akun");
+
+        if (!ok)
+          return showAlert(
+            "register-alert",
+            data.message || data.error || "Registrasi gagal.",
+          );
+
+        showAlert(
+          "register-success",
+          data.message ||
+            "Registrasi berhasil! Cek email kamu untuk verifikasi.",
+          "success",
+        );
+
+        // Auto login jika dapat token
+        if (data.access_token || data.token) {
+          saveTokens(data.access_token || data.token, data.refresh_token);
+          setTimeout(showProfile, 1200);
+        }
+      }
+
+      async function doForgotPassword() {
+        hideAlert("forgot-alert");
+        hideAlert("forgot-success");
+        const email = document.getElementById("forgot-email").value.trim();
+        if (!email) return showAlert("forgot-alert", "Masukkan email kamu.");
+
+        setLoading("forgot-btn", true, "Mengirim...");
+        const { ok, data } = await apiRequest("/auth/forgot-password", {
+          method: "POST",
+          body: JSON.stringify({ email }),
+        });
+        setLoading("forgot-btn", false, "Kirim Link Reset");
+
+        if (!ok)
+          return showAlert(
+            "forgot-alert",
+            data.message || data.error || "Gagal mengirim email reset.",
+          );
+        showAlert(
+          "forgot-success",
+          data.message || "Link reset password telah dikirim ke email kamu!",
+          "success",
+        );
+      }
+
+      async function doLogout() {
+        await apiRequest("/auth/logout", { method: "POST" }).catch(() => {});
+        clearTokens();
+        showAuthCard();
+      }
+
+      // ─── Profile ───
+      async function showProfile() {
+        document.getElementById("auth-card").style.display = "none";
+        document.getElementById("profile-card").style.display = "block";
+        document.getElementById("profile-loading").classList.add("show");
+        document.getElementById("profile-content").style.display = "none";
+
+        const { ok, data } = await apiRequest("/auth/me");
+
+        document.getElementById("profile-loading").classList.remove("show");
+
+        if (!ok) {
+          // Try refresh
+          const refreshed = await tryRefresh();
+          if (refreshed) return showProfile();
+          clearTokens();
+          showAuthCard();
+          return;
+        }
+
+        const user = data.user || data;
+
+        // Avatar initials
+        const initials = (user.username || user.email || "?")
+          .charAt(0)
+          .toUpperCase();
+        document.getElementById("profile-avatar").textContent = initials;
+        document.getElementById("profile-name").textContent =
+          user.username || user.name || user.email?.split("@")[0] || "—";
+        document.getElementById("profile-role").textContent =
+          user.role || "Member";
+        document.getElementById("profile-email").textContent =
+          user.email || "—";
+        document.getElementById("profile-verified").innerHTML =
+          user.email_verified
+            ? '<span class="badge badge-verified">Terverifikasi</span>'
+            : '<span class="badge badge-unverified">Belum Verifikasi</span>';
+
+        // Format dates
+        const fmtDate = (d) =>
+          d
+            ? new Date(d).toLocaleDateString("id-ID", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })
+            : "—";
+        document.getElementById("profile-created").textContent = fmtDate(
+          user.created_at,
+        );
+        document.getElementById("profile-last-login").textContent = fmtDate(
+          user.last_login || user.updated_at,
+        );
+        document.getElementById("profile-id").textContent =
+          user.id || user.uuid || "—";
+
+        document.getElementById("profile-content").style.display = "block";
+      }
+
+      async function tryRefresh() {
+        const refresh = getRefresh();
+        if (!refresh) return false;
+        const { ok, data } = await apiRequest("/auth/refresh", {
+          method: "POST",
+          body: JSON.stringify({ refresh_token: refresh }),
+        });
+        if (ok && (data.access_token || data.token)) {
+          saveTokens(
+            data.access_token || data.token,
+            data.refresh_token || refresh,
+          );
+          return true;
+        }
+        return false;
+      }
+
+      function showAuthCard() {
+        document.getElementById("auth-card").style.display = "block";
+        document.getElementById("profile-card").style.display = "none";
+        switchView("login");
+      }
+
+      // ─── Init ───
+      window.addEventListener("DOMContentLoaded", () => {
+        const token = getAccess();
+        if (token) showProfile();
+
+        // Enter key support
+        document.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter") return;
+          const activeView = document.querySelector(".view.active");
+          if (!activeView) return;
+          if (activeView.id === "view-login") doLogin();
+          else if (activeView.id === "view-register") doRegister();
+          else if (activeView.id === "view-forgot") doForgotPassword();
+        });
+      });
+    </script>
+  </body>
+</html>
